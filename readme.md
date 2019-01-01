@@ -64,26 +64,29 @@ The relay outputs can be linked to a 'timer'. In that case, when the ouput is sw
 > Timers are also activated when a relay output is triggered from outside HomeKit (Evok or another channel)
 
 ```json
+{
+"...collapsed stuff",
 "timers": [
     {
-        "relayType": "physical", 	// physical relay
-        "circuit": "2_09", 			// Evok circuit id RO 2.9
-        "timeout": 120000, 			// Timeout of 120000 ms (2 min)
-        "name": "Hallway lights 2 min timer" // Name of the timer
+        "relayType": "physical",
+        "circuit": "2_09",
+        "timeout": 120000,
+        "name": "Hallway lights 2 min timer"
     },
     {
-        "relayType": "digital", 	// digital relay (DO)
-        "circuit": "1_04",			// Evok circuit id DO 1.4
-        "timeout": 200,				// Timeout of 200 ms to trigger impulse relay
-        "name": "Bathroom ventilation", // Name of timer and virtual impulse relay
-        "pulse": true				// Emulate virtual pulse relay
+        "relayType": "digital",
+        "circuit": "1_04",
+        "timeout": 200,
+        "name": "Bathroom ventilation",
+        "pulse": true
     }
 ]
+}
 ```
 
 ### Extra: Virtual Impulse Relay
 
-Sometimes, you want to use a relay output to trigger another external relay. If this relay is an *impulse relay*, it will not require a constant current to keep the relay closed, but a short pulse to make it change state is sufficient. This poses one problem: the trigger output will change back to off state, and you won't be able to see if the triggered relay is in 'on' or 'off' state. Enter '<u>virtual impulse relays'</u>.
+Sometimes, you'll want to use a relay output to trigger another external relay. If this relay is an *impulse relay*, it will not require a constant current to keep the relay closed. Instead, a short pulse to make it change state is sufficient. This poses one problem: the trigger output will change back to off state, and you won't be able to see if the triggered relay is in 'on' or 'off' state. Enter '<u>virtual impulse relays'</u>.
 
  When setting up a a timer with a very short 'pulse' timeout, you can add the property `"pulse": true`, and an optional property `"name": "whatever"`. In that case the timer will construct an additional **virtual impulse relay** (switch service), that will **toggle on and off automatically** whenever the relay linked to the timer is switched on. This will allows you to track the on-off state of the impulse relay, provided that the initial state is correct. If not, you can manually correct the state.
 
@@ -152,7 +155,7 @@ sudo npm -g install homebridge
 
 2. Install the plugin globally
 ```bash
-sudo npm -g install homebridge-unipi-evok
+sudo npm -g install homebridge-unipi
 ```
 
 3. If you didn't do so before, edit your `/var/lib/homebridge/.homebridge/config.json`, and add a platform in the `platforms` array:
@@ -249,7 +252,7 @@ In order to update either HomeBridge or the plugin, simply execute:
 
 ```bash
 # Update all globally installed npm libraries
-sudo npm -g install npm && sudo npm -g install homebridge-unipi-evok
+sudo npm -g install npm && sudo npm -g install homebridge-unipi
 
 # If updated, restart homebridge
 sudo systemctl restart homebridge

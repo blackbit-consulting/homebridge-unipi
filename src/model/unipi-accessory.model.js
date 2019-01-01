@@ -1,8 +1,5 @@
 "use strict";
 
-const Rx = require("rxjs");
-const filter = require("rxjs/operators").filter;
-
 const Evok = require("unipi-evok");
 
 /**
@@ -40,7 +37,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				.setCharacteristic(UniPiAccessory.Characteristic.FirmwareRevision, "Pending");
 		}
 		this.$timers = this.$config && this.$config.timers && this.$config.timers.map((timerConfig) => {
-			this.log("Timer on " + timerConfig.relayType + " circuit " + timerConfig.circuit);
+			this.log("Timer on " + timerConfig.relayType + " relay " + timerConfig.circuit);
 			return {
 				relayType: timerConfig.relayType,
 				circuit: timerConfig.circuit,
@@ -202,12 +199,6 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.Switch, `digital-relay-${s}.${i}`);
 				if (!digOut) {
 					digOut = new UniPiAccessory.Service.Switch(`Digital Output ${s}.${i}`, `digital-relay-${s}.${i}`);
-					/*digOut
-						.setCharacteristic(UniPiAccessory.Characteristic.Manufacturer, "UniPi.technology")
-						.setCharacteristic(UniPiAccessory.Characteristic.Model, "Neuron M203")
-						.setCharacteristic(UniPiAccessory.Characteristic.SerialNumber, "140")
-						.setCharacteristic(UniPiAccessory.Characteristic.FirmwareRevision, "Unknown")
-						.setCharacteristic(UniPiAccessory.Characteristic.Name, `Digital Output ${s}.${i}`);*/
 					this.accessory.addService(digOut);
 				}
 				digOut
@@ -235,12 +226,6 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.Switch, `physical-relay-${s}.${i}`);
 				if (!relay) {
 					relay = new UniPiAccessory.Service.Switch(`Relay ${s}.${i}`, `physical-relay-${s}.${i}`);
-					/*relay
-						.setCharacteristic(UniPiAccessory.Characteristic.Manufacturer, "UniPi.technology")
-						.setCharacteristic(UniPiAccessory.Characteristic.Model, "Neuron M203")
-						.setCharacteristic(UniPiAccessory.Characteristic.SerialNumber, "140")
-						.setCharacteristic(UniPiAccessory.Characteristic.FirmwareRevision, "Unknown")
-						.setCharacteristic(UniPiAccessory.Characteristic.Name, `Relay ${s}.${i}`);*/
 					this.accessory.addService(relay);
 				}
 				relay
@@ -273,12 +258,6 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.StatelessProgrammableSwitch, `digital-input-${s}.${i}`);
 				if (!digIn) {
 					digIn = new UniPiAccessory.Service.StatelessProgrammableSwitch(`Digital Input ${s}.${i}`, `digital-input-${s}.${i}`)
-					/*digIn
-						.setCharacteristic(UniPiAccessory.Characteristic.Manufacturer, "UniPi.technology")
-						.setCharacteristic(UniPiAccessory.Characteristic.Model, "Neuron M203")
-						.setCharacteristic(UniPiAccessory.Characteristic.SerialNumber, "140")
-						.setCharacteristic(UniPiAccessory.Characteristic.FirmwareRevision, "Unknown")
-						.setCharacteristic(UniPiAccessory.Characteristic.Name, `Digital Input ${s}.${i}`);*/
 					this.accessory.addService(digIn);
 				}
 				digIn
@@ -292,7 +271,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					.setValue(l);
 
 				this.$digitalInputs.set(`digital-input-${s}.${i}`, digIn);
-				// TODO : Setup input debounce to a value between 5 and 10. Not possible via unipi-evok lib now.
+
 				this.$digitalInputStates.set(`digital-input-${s}.${i}`, {
 					down: false,
 					downTime: null,
@@ -415,6 +394,29 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 		}
 	}
 
+	processUniPiEvent(event) {
+		this.resetWatchDog();
+
+		// this.log(event);
+		switch (event.dev) {
+			case "neuron":
+				this.$accessory
+					.getService(UniPiAccessory.Service.AccessoryInformation)
+					.setCharacteristic(UniPiAccessory.Characteristic.Manufacturer, "UniPi.technology")
+					.setCharacteristic(UniPiAccessory.Characteristic.Model, `Neuron ${event.model}`)
+					.setCharacteristic(UniPiAccessory.Characteristic.SerialNumber, `${event.sn}`)
+					.setCharacteristic(UniPiAccessory.Characteristic.FirmwareRevision, event.ver2);
+				break;
+			case "input":
+				this.processDigitalInputEvent(event);
+				break;
+			case "relay":
+			case "led":
+				this.processOnOffEvent(event);
+				break;
+		}
+	}
+
 	start() {
 		this.$device = new Evok({
 			host: this.$config.host,
@@ -424,38 +426,11 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 		this.resetWatchDog();
 
-		this.$eventStream = new Rx.Subject();
-
-		this.$eventStream
-			.subscribe((event) => {
-				// Reset the watchdog counter upon every message! Analog inputs trigger messages often!
-				this.resetWatchDog();
-
-				// this.log(event);
-				switch (event.dev) {
-					case "neuron":
-						this.$accessory
-							.getService(UniPiAccessory.Service.AccessoryInformation)
-							.setCharacteristic(UniPiAccessory.Characteristic.Manufacturer, "UniPi.technology")
-							.setCharacteristic(UniPiAccessory.Characteristic.Model, `Neuron ${event.model}`)
-							.setCharacteristic(UniPiAccessory.Characteristic.SerialNumber, `${event.sn}`)
-							.setCharacteristic(UniPiAccessory.Characteristic.FirmwareRevision, event.ver2);
-						break;
-					case "input":
-						this.processDigitalInputEvent(event);
-						break;
-					case "relay":
-					case "led":
-						this.processOnOffEvent(event);
-						break;
-				}
-			});
 
 		this.$device
 			.on("connected", () => {
 				this.reachable();
 
-				this.$eventStream.next({dev: "unipi", value: 1});
 				if (!this.$alreadyConnected) {
 					this.$alreadyConnected = true;
 					this.$setupDigitalOutputs();
@@ -467,7 +442,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				}
 				// Set initial states
 				this.$device.devices().forEach((device) => {
-					this.$eventStream.next(device);
+					this.processUniPiEvent(device);
 				});
 				this.startWatchDog();
 			})
@@ -477,7 +452,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				this.reconnect();
 			})
 			.on("message", (device, previous = {}) => {
-				device.forEach((message) => this.$eventStream.next(message));
+				device.forEach((message) => this.processUniPiEvent(message));
 			});
 		this.reconnect();
 	}
@@ -651,12 +626,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.Lightbulb, `user-led-${s}.${i}`);
 				if (!led) {
 					led = new UniPiAccessory.Service.Lightbulb(`User Led ${s}.${i}`, `user-led-${s}.${i}`);
-					led
-						.setCharacteristic(UniPiAccessory.Characteristic.Manufacturer, "UniPi.technology")
-						.setCharacteristic(UniPiAccessory.Characteristic.Model, "Neuron M203")
-						.setCharacteristic(UniPiAccessory.Characteristic.SerialNumber, "140")
-						.setCharacteristic(UniPiAccessory.Characteristic.FirmwareRevision, "Unknown")
-						.setCharacteristic(UniPiAccessory.Characteristic.Name, `User Led ${s}.${i}`);
+					led.setCharacteristic(UniPiAccessory.Characteristic.Name, `User Led ${s}.${i}`);
 					this.accessory.addService(led);
 				}
 				led.getCharacteristic(UniPiAccessory.Characteristic.On)

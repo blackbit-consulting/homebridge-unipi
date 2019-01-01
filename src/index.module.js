@@ -5,21 +5,23 @@
  */
 
 const UniPiPlatform = require("./model/unipi-platform.model").UniPiPlatform;
-const UniPiAccessory=require("./model/unipi-accessory.model").UniPiAccessory;
 
 
 /**
  * This function is called when homebridge loads the plugin.
- * @param homebridge {HomeBridge}
+ *
+ * @param homebridge {object} Reference to the homebridge instance.
  */
 module.exports = function(homebridge) {
 
-	console.info("Loading UniPi-Platform on HomeBridge %s", homebridge.version);
-
+	/**
+	 * First, set a static reference to homebridge on the Platform. This way, we have access to all types we need.
+	 * @type {Object}
+	 */
 	UniPiPlatform.homebridge = homebridge;
 
 	/**
-	 * Register the platform with homebridge. This will create a new instance of the platform, and set it up with
+	 * Register the UniPiPlatform with homebridge. This will create a new instance of the platform, and set it up with
 	 * homebridge.
 	 */
 	UniPiPlatform.register();

@@ -1,27 +1,32 @@
 {
-  "name": "homebridge-unipi-evok",
+  "name": "homebridge-unipi",
   "version": "1.0.0",
-  "description": "HomeBridge Plugin for the UniPi Neuron Devices using the EVOK API as a backend",
+  "description": "HomeBridge Plugin for the UniPi Neuron Devices",
   "keywords": [
     "homebridge-plugin",
     "unipi"
   ],
+  "license": "LGPL-3.0",
+  "private": false,
   "main": "src/index.module.js",
-  "esnext": {
-    "main": "src/index.module.js"
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:blackbit-consulting/homebridge-unipi.git"
   },
   "author": {
     "name": "Daan Kets",
     "email": "daankets@blackbit.be"
   },
-  "license": "LGPL-3.0",
-  "private": false,
+  "contributors": [
+    {
+      "name": "Daan Kets",
+      "email": "daankets@blackbit.be"
+    }
+  ],
   "dependencies": {
-    "rxjs": "^6.3.3",
     "unipi-evok": "^0.1.1"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=11.0.0",
     "homebridge": "^0.4.0"
