@@ -28,10 +28,16 @@ module.exports.UniPiPlatform = class UniPiPlatform {
 			discovery: config && config.discovery && true || false,
 			endpoints: config && config.endpoints && config.endpoints.map((endpoint) => {
 				return endpoint && {
+					id: endpoint.id,
 					name: endpoint.name || "Untitled UniPi",
 					host: endpoint.host || "localhost",
 					port: endpoint.port || 80,
-					wsPort: endpoint.wsPort || 8080
+					wsPort: endpoint.wsPort || 8080,
+					connectionSensor: endpoint.connectionSensor !== false,
+					doublePressMaxDelay: endpoint.doublePressMaxDelay,
+					longPressMinDelay: endpoint.longPressMinDelay,
+					timers: endpoint.timers || [],
+					input: endpoint.inputs || []
 				} || null;
 			})
 		};
@@ -56,9 +62,19 @@ module.exports.UniPiPlatform = class UniPiPlatform {
 	 */
 	configureAccessory(accessory) {
 		this.log("Restoring accessory...", accessory);
-		const uniPiAccessory = new UniPiAccessory(this, null, accessory);
-		this.$accessories.set(accessory.uuid, uniPiAccessory);
-		uniPiAccessory.start();
+		const deviceId = accessory.context.id;
+		const config = this.$config.endpoints.find((endpoint) => endpoint.id === deviceId);
+		if (config) {
+			this.log("Config for accessory " + accessory.context.id + " found. Activating...");
+			const uniPiAccessory = new UniPiAccessory(this, config, accessory);
+			this.$accessories.set(accessory.uuid, uniPiAccessory);
+			uniPiAccessory.start();
+		} else {
+			// Remove!
+			this.log("Missing config for accessory with id " + accessory.context.id);
+			this.log("Removing accessory");
+			this.unregisterUniPiAccessory(accessory);
+		}
 	}
 
 	/**
@@ -80,14 +96,14 @@ module.exports.UniPiPlatform = class UniPiPlatform {
 		this.log("Removing Accessory...", uuid);
 		let accessory = this.$accessories.get(uuid);
 		if (accessory) {
+			UniPiAccessory.stop();
 			accessory.unregister();
 			this.$accessories.delete(uuid);
 		}
 	}
 
-	unregisterUniPiAccessory(uniPiAccessory) {
-		UniPiAccessory.stop();
-		UniPiAccessory.$homebridge.unregisterPlatformAccessories("homebridge-unipi-evok", "UniPi", [uniPiAccessory.accessory]);
+	unregisterUniPiAccessory(accessory) {
+		UniPiPlatform.$homebridge.unregisterPlatformAccessories("homebridge-unipi-evok", "UniPi", [accessory]);
 	}
 
 	static set homebridge(homebridge) {

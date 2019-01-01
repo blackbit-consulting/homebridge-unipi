@@ -1,6 +1,6 @@
 {
   "name": "homebridge-unipi-evok",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "HomeBridge Plugin for the UniPi Neuron Devices using the EVOK API as a backend",
   "keywords": [
     "homebridge-plugin",
