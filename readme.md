@@ -13,9 +13,9 @@ The purpose of *this* plugin library is to expose <u>all</u> (or as much as poss
 ![UniPi Neuron Device](./static/unipi-neuron.png)
 _**Copyright & Source**: [UniPi.technology](https://unipi.technology)_
 
-# State of development (beta)
+# State of development
 
-This is a work in progress, and only available as a beta today. That said, a lot already works ;-)
+This is a work in progress, but a lot already works ;-). Enough for a first 1.0.0 release:
 
 ![Screenshot](./static/screenshot.png)
 
