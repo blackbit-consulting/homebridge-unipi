@@ -11,7 +11,7 @@ This library provides a [homebridge](homebridge.io) **platform plugin** for the 
 The purpose of *this* plugin library is to expose <u>all</u> (or as much as possible) of the default features of a UniPi device as a single HomeKit Accessory with automatically detected services for all of the features. I also added some extras...
 
 ![UniPi Neuron Device](./static/unipi-neuron.png)
-_**Copyright & Source**: [UniPi.technology](https://unipi.technology)_
+_**Copyright & Source**: [UniPi.technology](https://unipi.technology) - With permission from the copyright owner_
 
 # State of development
 
