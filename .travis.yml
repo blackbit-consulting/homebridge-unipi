@@ -1,0 +1,5 @@
+# This file triggers the Travis-CI Continuous Build
+language: node_js
+node_js:
+	- "node"
+	- "11"
