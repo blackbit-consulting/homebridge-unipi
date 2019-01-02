@@ -1,7 +1,7 @@
 # This file triggers the Travis-CI Continuous Build
 language: node_js
 node_js:
-	- "stable"
+  - "stable"
 
 script:
-	- jscs .
+  - jscs .
