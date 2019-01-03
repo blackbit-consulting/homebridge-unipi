@@ -1,7 +1,7 @@
 "use strict";
 
 const Evok = require("unipi-evok");
-s
+
 /**
  * This class represents a single UniPi Accessory. It acts as a gateway for retrieving information from the device,
  * and for sending commands to the device. This class represents the Accessory in HomeBridge.

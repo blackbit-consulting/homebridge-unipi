@@ -3,7 +3,8 @@ author: Daan Kets <daankets@blackbit.be>
 version: 1.0.0
 title: HomeBridge UniPi Plugin for Evok API
 ---
-
+[![npm version](https://badge.fury.io/js/homebridge-unipi.svg)](https://badge.fury.io/js/homebridge-unipi)
+[![Build Status](https://travis-ci.org/blackbit-consulting/homebridge-unipi.svg?branch=develop)](https://travis-ci.org/blackbit-consulting/homebridge-unipi) 
 # About this plugin
 
 This library provides a [homebridge](homebridge.io) **platform plugin** for the [UniPi](https://unipi.technology) [Neuron](https://www.unipi.technology/products?category=2) series of devices. Although the Neuron devices come with a set of supported software, they are not HomeKit compatible. It is possible to expose them to HomeKit via third party domotics platoforms, but that still requires you to do quite a bit of manual configuration and tweaking.
