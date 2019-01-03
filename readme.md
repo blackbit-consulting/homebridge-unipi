@@ -1,8 +1,3 @@
----
-author: Daan Kets <daankets@blackbit.be>
-version: 1.0.0
-title: HomeBridge UniPi Plugin for Evok API
----
 [![npm version](https://badge.fury.io/js/homebridge-unipi.svg)](https://badge.fury.io/js/homebridge-unipi)
 [![Build Status](https://travis-ci.org/blackbit-consulting/homebridge-unipi.svg?branch=develop)](https://travis-ci.org/blackbit-consulting/homebridge-unipi) 
 # About this plugin
