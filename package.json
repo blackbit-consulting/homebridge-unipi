@@ -1,34 +1,39 @@
 {
-  "name": "homebridge-unipi",
-  "version": "1.0.0",
-  "description": "HomeBridge Plugin for the UniPi Neuron Devices",
-  "keywords": [
-    "homebridge-plugin",
-    "unipi"
-  ],
-  "license": "LGPL-3.0",
-  "private": false,
-  "main": "src/index.module.js",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:blackbit-consulting/homebridge-unipi.git"
-  },
-  "author": {
-    "name": "Daan Kets",
-    "email": "daankets@blackbit.be"
-  },
-  "contributors": [
-    {
-      "name": "Daan Kets",
-      "email": "daankets@blackbit.be"
-    }
-  ],
-  "dependencies": {
-    "unipi-evok": "^0.1.1"
-  },
-  "devDependencies": {},
-  "engines": {
-    "node": ">=11.0.0",
-    "homebridge": "^0.4.0"
-  }
+	"name": "homebridge-unipi",
+	"version": "1.1.1",
+	"description": "HomeBridge Plugin for the UniPi Neuron Devices",
+	"keywords": [
+		"homebridge-plugin",
+		"unipi"
+	],
+	"license": "LGPL-3.0",
+	"private": false,
+	"main": "src/index.module.js",
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:blackbit-consulting/homebridge-unipi.git"
+	},
+	"author": {
+		"name": "Daan Kets",
+		"email": "daankets@blackbit.be"
+	},
+	"contributors": [
+		{
+			"name": "Daan Kets",
+			"email": "daankets@blackbit.be"
+		}
+	],
+	"scripts": {
+		"test": "npx jscs ."
+	},
+	"dependencies": {
+		"unipi-evok": "^0.1.1"
+	},
+	"devDependencies": {
+		"jscs": "^3.0.7"
+	},
+	"engines": {
+		"node": ">=11.0.0",
+		"homebridge": "^0.4.0"
+	}
 }

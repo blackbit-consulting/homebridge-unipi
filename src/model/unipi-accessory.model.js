@@ -1,6 +1,7 @@
 "use strict";
 
 const Evok = require("unipi-evok");
+const RELAY_TYPE = "relay_type";
 
 /**
  * This class represents a single UniPi Accessory. It acts as a gateway for retrieving information from the device,
@@ -48,12 +49,18 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			};
 		}) || [];
 
-		this.$connectionSensor = this.$accessory.getServiceByUUIDAndSubType(UniPiAccessory.Service.ContactSensor, "evok-connection");
+		this.$connectionSensor = this.$accessory.getServiceByUUIDAndSubType(
+			UniPiAccessory.Service.ContactSensor,
+			"evok-connection"
+		);
 
 		if (this.$config.connectionSensor !== false) {
 			if (!this.$connectionSensor) {
 				this.log("Contact sensor configured. Adding service...");
-				this.$connectionSensor = new UniPiAccessory.Service.ContactSensor(`${this.$config.name} Connection`, "evok-connection");
+				this.$connectionSensor = new UniPiAccessory.Service.ContactSensor(
+					`${this.$config.name} Connection`,
+					"evok-connection"
+				);
 				this.$connectionSensor
 					.setCharacteristic(UniPiAccessory.Characteristic.Name, `${this.$config.name} Connection`);
 				this.$accessory.addService(this.$connectionSensor);
@@ -116,32 +123,51 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					virtualImpulseRelay
 						.getCharacteristic(UniPiAccessory.Characteristic.On)
 						.updateValue(false);
+				} else {
+					// Update the name of the virtual relay on startup
+					virtualImpulseRelay
+						.setCharacteristic(
+							UniPiAccessory.Characteristic.Name,
+							timer.name || `Virtual impulse relay on ${outputType} ${s} ${i}`, id
+						)
 				}
-				virtualImpulseRelay
-					.getCharacteristic(UniPiAccessory.Characteristic.On)
+				let onCharacteristic =
+					virtualImpulseRelay
+						.getCharacteristic(UniPiAccessory.Characteristic.On);
+
+				onCharacteristic
 					.on("set", (state, done) => {
 						this.log("SET VIRTUAL IMPULSE", id, "to", state);
 						if (this.$maintenanceModeActive) {
 							this.safeCallback(done, null, state);
 							return;
 						}
-						// Trigger the output linked to the timer
-						switch (timer.relayType) {
-							case "digital":
-								timer.ignoreNextToggle = true;
-								this.setDigitalOutputState(timer.circuit, true, (error, result) => {
-									this.safeCallback(done, error, state);
-								});
-								break;
-							case "physical":
-								timer.ignoreNextToggle = true;
-								this.setRelayOutputState(timer.circuit, true, (error, result) => {
-									this.safeCallback(done, error, state);
-								});
-								break;
-							default:
-								this.safeCallback(done, "no_such_output");
-						}
+
+						// Check current state!
+						onCharacteristic.getValue((error, currentState) => {
+							if (state === currentState) {
+								this.log("SET VIRTUAL IMPULSE", id, "already in state", state);
+								this.safeCallback(done, null, state);
+								return;
+							}
+							// Trigger the output linked to the timer only if the current state is different!
+							switch (timer.relayType) {
+								case "digital":
+									timer.ignoreNextToggle = true;
+									this.setDigitalOutputState(timer.circuit, true, (error, result) => {
+										this.safeCallback(done, error, state);
+									});
+									break;
+								case "physical":
+									timer.ignoreNextToggle = true;
+									this.setRelayOutputState(timer.circuit, true, (error, result) => {
+										this.safeCallback(done, error, state);
+									});
+									break;
+								default:
+									this.safeCallback(done, "no_such_output");
+							}
+						});
 					});
 			} else {
 				let virtualImpulseRelay = this.$accessory.getServiceByUUIDAndSubType(UniPiAccessory.Service.Switch, id);
@@ -257,7 +283,10 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				let digIn = this.$accessory
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.StatelessProgrammableSwitch, `digital-input-${s}.${i}`);
 				if (!digIn) {
-					digIn = new UniPiAccessory.Service.StatelessProgrammableSwitch(`Digital Input ${s}.${i}`, `digital-input-${s}.${i}`)
+					digIn = new UniPiAccessory.Service.StatelessProgrammableSwitch(
+						`Digital Input ${s}.${i}`,
+						`digital-input-${s}.${i}`
+					);
 					this.accessory.addService(digIn);
 				}
 				digIn
@@ -271,13 +300,25 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					.setValue(l);
 
 				this.$digitalInputs.set(`digital-input-${s}.${i}`, digIn);
+				let inputConfig =
+					this.$config &&
+					this.$config.inputs &&
+					this.$config.$inputs[`${s}_${i}`] ||
+					{
+						maxRepeatCount: (this.$config.inputs && this.$config.inputs.maxRepeatCount) || 10
+					};
 
 				this.$digitalInputStates.set(`digital-input-${s}.${i}`, {
 					down: false,
 					downTime: null,
 					upTime: null,
 					cancelTimer: null,
-					labelIndex: l
+					labelIndex: l,
+					repeatCount: 0,
+					repeatStart: null,
+					maxRepeatCount: inputConfig.maxRepeatCount || (
+						this.$config.inputs && this.$config.inputs.maxRepeatCount
+					) || 10
 				});
 			});
 		} catch (error) {
@@ -286,13 +327,13 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	}
 
 	processOnOffEvent(event) {
-		// console.log("Processing relay event %j", event);
+		// DISABLED this.log("Processing relay event %j", event);
 		let {s, i} = {s: parseInt(event.circuit.substr(0, 1)), i: parseInt(event.circuit.substr(2))};
 		let device = null;
-		if (event.dev === "relay" && event.relay_type === "digital") {
+		if (event.dev === "relay" && event[RELAY_TYPE] === "digital") {
 			const digOutId = `digital-relay-${s}.${i}`;
 			device = this.$digitalOutputs.get(digOutId);
-		} else if (event.dev === "relay" && event.relay_type === "physical") {
+		} else if (event.dev === "relay" && event[RELAY_TYPE] === "physical") {
 			const relayId = `physical-relay-${s}.${i}`;
 			device = this.$relayOutputs.get(relayId);
 		} else if (event.dev === "led") {
@@ -311,7 +352,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 						.getCharacteristic(UniPiAccessory.Characteristic.On)
 						.updateValue(event.value && true || false);
 					let timer = this.$timers.find((timer) => {
-						return (timer.relayType === event.relay_type && timer.circuit === event.circuit);
+						return (timer.relayType === event[RELAY_TYPE] && timer.circuit === event.circuit);
 					});
 					if (timer) {
 						if (timer.cancelTimeout) {
@@ -337,29 +378,42 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	}
 
 	processDigitalInputEvent(event) {
-		// console.log("Processing digital input event %j", event);
+		// DISABLED this.log("Processing digital input event %j", event);
 		let {s, i} = {s: parseInt(event.circuit.substr(0, 1)), i: parseInt(event.circuit.substr(2))};
 		const digInId = `digital-input-${s}.${i}`;
 		let digIn = this.$digitalInputs.get(digInId);
 		let state = this.$digitalInputStates.get(digInId);
 		if (digIn) {
 			if (event.value === 1) {
-				// this.log("Digital input " + digInId + " DOWN");
+				// DISABLED this.log("Digital input " + digInId + " DOWN");
 				state.down = true;
 				state.downTime = Date.now();
 				if (!state.cancelLongPressInterval) {
 					this.log("LONG PRESS TIMER", digInId, "LABEL", state.labelIndex);
 					state.cancelLongPressInterval = setInterval(() => {
-						this.log("LONG PRESS", digInId, "LABEL", state.labelIndex);
-						state.longPressRelease = true;
-						digIn
-							.getCharacteristic(UniPiAccessory.Characteristic.ProgrammableSwitchEvent)
-							.updateValue(UniPiAccessory.Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+						state.repeatStart = state.repeatStart || new Date().getTime();
+						// PREVENT TOO MANY REPEATS
+						if (state.repeatCount >= state.maxRepeatCount) {
+							this.log(
+								`REPEAT LOOP DETECTED FOR DIGITAL IN ${s}.${i} (label index ${state.labelIndex}).` +
+								` - YOUR BUTTON MAY BE STUCK`
+							);
+						} else {
+							this.log("LONG PRESS", digInId, "LABEL", state.labelIndex);
+							state.repeatCount++;
+							state.longPressRelease = true;
+							if (this.processRuleIfAny("input", `${s}_${i}`, "long")) {
+								return;
+							}
+							digIn
+								.getCharacteristic(UniPiAccessory.Characteristic.ProgrammableSwitchEvent)
+								.updateValue(UniPiAccessory.Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+						}
 					}, (this.$config.longPressMinDelay || 1000));
 				}
 			}
 			if (event.value === 0) {
-				// this.log("Digital input " + digInId + " UP");
+				// DISABLED this.log("Digital input " + digInId + " UP");
 				let wasDown = state.down;
 				state.down = false;
 				state.upTime = Date.now();
@@ -367,23 +421,28 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					clearInterval(state.cancelLongPressInterval);
 					state.cancelLongPressInterval = null;
 				}
-				let delay = state.upTime - state.downTime;
 				if (wasDown) {
 					if (state.cancelTimer) { // DOUBLE CLICK
 						clearTimeout(state.cancelTimer);
 						state.cancelTimer = null;
 						this.log("DOUBLE PRESS", digInId, "LABEL", state.labelIndex);
+						if (this.processRuleIfAny("input", `${s}_${i}`, "double")) {
+							return;
+						}
 						digIn
 							.getCharacteristic(UniPiAccessory.Characteristic.ProgrammableSwitchEvent)
 							.updateValue(UniPiAccessory.Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
 					} else if (state.longPressRelease) {
-						// this.log("IGNORE LONG PRESS RELEASE", digInId);
+						// DISABLED this.log("IGNORE LONG PRESS RELEASE", digInId);
 						state.longPressRelease = false;
 					} else {
-						// this.log("SINGLE PRESS", digInId, "in", (this.$config.doublePressMaxDelay || 500), "ms");
+						// DISABLED this.log("SINGLE PRESS", digInId, "in", (this.$config.doublePressMaxDelay || 500), "ms");
 						state.cancelTimer = setTimeout(() => {
 							state.cancelTimer = null;
 							this.log("SINGLE PRESS", digInId, "LABEL", state.labelIndex);
+							if (this.processRuleIfAny("input", `${s}_${i}`, "single")) {
+								return;
+							}
 							digIn
 								.getCharacteristic(UniPiAccessory.Characteristic.ProgrammableSwitchEvent)
 								.updateValue(UniPiAccessory.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
@@ -394,10 +453,52 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 		}
 	}
 
+	/**
+	 * Process rule for an event
+	 * @param dev {string} Device
+	 * @param circuit {string} Circuit
+	 * @param event {string} event
+	 * @return {boolean} true if this event must be suppressed
+	 */
+	processRuleIfAny(dev, circuit, event) {
+		// If there is a rule for this event, process it!
+		if (this.$config.rules) {
+			let rule = this.$config.rules.find((rule) => {
+				return rule.when && rule.when.dev === "input" && rule.when.circuit === `${circuit}` && rule.when.event === event;
+			});
+			if (rule) {
+				this.log(`Rule '${rule.name}' found for this event`);
+				if (rule.then) {
+					rule.then.forEach((action) => {
+						if (action.dev === "relay") {
+							switch (action.relayType) {
+								case "physical":
+									this.setRelayOutputState(action.circuit, action.state === true);
+									break;
+								case "digital":
+									this.setDigitalOutputState(action.circuit, action.state === true);
+									break;
+								default:
+									break;
+							}
+						} else if (action === "led") {
+							this.setUserLedState(action.circuit, action.state === true);
+						}
+					});
+				}
+				if (rule.mute) {
+					// Do not raise event!
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	processUniPiEvent(event) {
 		this.resetWatchDog();
 
-		// this.log(event);
+		// DISABLED this.log(event);
 		switch (event.dev) {
 			case "neuron":
 				this.$accessory
@@ -533,7 +634,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	 */
 	setDigitalOutputState(circuit, state, done) {
 		try {
-			// this.log("Setting Digital Output " + circuit + " to " + state);
+			// DISABLED this.log("Setting Digital Output " + circuit + " to " + state);
 			let value = this.$device.digitalOutput(circuit, state && true || false);
 			this.safeCallback(done, null, value);
 		} catch (error) {
@@ -550,7 +651,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	getDigitalOutputState(circuit, done) {
 		try {
-			// this.log("Reading Digital Output " + circuit);
+			// DISABLED this.log("Reading Digital Output " + circuit);
 			this.assertConnected();
 			let value = this.$device.digitalOutput(circuit);
 			this.safeCallback(done, null, value);
@@ -569,7 +670,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	 */
 	setRelayOutputState(circuit, state, done) {
 		try {
-			this.log("Setting Relay Output", circuit, " to ", state);
+			this.log("Setting Relay Output", circuit, "to", state);
 			this.assertConnected();
 			let value = this.$device.relay(circuit, state && true || false);
 			this.safeCallback(done, null, value);
@@ -581,7 +682,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	getRelayOutputState(circuit, done) {
 		try {
-			// this.log("Reading Relay Output " + circuit);
+			// DISABLED this.log("Reading Relay Output " + circuit);
 			this.assertConnected();
 			let value = this.$device.relay(circuit);
 			this.safeCallback(done, null, value);
@@ -593,7 +694,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	setUserLedState(circuit, state, done) {
 		try {
-			// this.log("Setting User Led " + circuit + " to " + state);
+			// DISABLED this.log("Setting User Led " + circuit + " to " + state);
 			this.assertConnected();
 			let value = this.$device.led(circuit, state && true || false);
 			this.safeCallback(done, null, value);
@@ -605,7 +706,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	getUserLedState(circuit, done) {
 		try {
-			// this.log("Reading User Led " + circuit);
+			// DISABLED this.log("Reading User Led " + circuit);
 			this.assertConnected();
 			let value = this.$device.led(circuit);
 			this.safeCallback(done, null, value);
@@ -717,7 +818,9 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	safeCallback(cb, error, ...results) {
 		try {
-			cb(error, ...results)
+			if (cb) {
+				cb(error, ...results)
+			}
 		} catch (error) {
 			console.error("Error executing callback", error, error.stack);
 		}

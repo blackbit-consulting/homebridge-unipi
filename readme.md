@@ -1,6 +1,6 @@
 ---
 author: Daan Kets <daankets@blackbit.be>
-version: 1.0.0
+version: 1.1.1
 title: HomeBridge UniPi Plugin for Evok API
 ---
 
@@ -11,7 +11,7 @@ This library provides a [homebridge](homebridge.io) **platform plugin** for the 
 The purpose of *this* plugin library is to expose <u>all</u> (or as much as possible) of the default features of a UniPi device as a single HomeKit Accessory with automatically detected services for all of the features. I also added some extras...
 
 ![UniPi Neuron Device](./static/unipi-neuron.png)
-_**Copyright & Source**: [UniPi.technology](https://unipi.technology)_
+_**Copyright & Source**: [UniPi.technology](https://unipi.technology) - With permission from the copyright owner_
 
 # State of development
 
@@ -39,6 +39,104 @@ The plugin exposes a 'maintenance mode' virtual switch. Setting the maintenance 
 
 - Trigger pulse timers *without updating the associated virtual impulse relay* (for correcting the impuls relay state if it is wrong)
 - Manually change a virtual pulse relay's state, *without triggering the corresponding digital output*, for the same reasons as above.
+
+## Built-in switching rules
+
+As of version 1.1.0, it is possible to define switching rules for input digital input events in the system, by adding a set of rules to your configuration. These rules process a bit faster than the Homekit rules, also work when your homekit hub is offline, and are faster to define (and preserved if your HomeKit environment ever has an accidental reset).
+
+### Example
+
+> **Note** that the entire "rules" section is optional and per 'unipi endpoint'.
+
+```json
+{
+  "timers": [
+    "..."
+  ],
+  "rules": [
+    {
+      "name": "Long press toggles kitchen lights",
+      "when": {
+        "dev": "input",
+        "circuit": "2_16",
+        "event": "long",
+        "comments": [
+          "Supported events are 'single', 'double', 'long'",
+          "Only a single rule must match one input"
+        ]
+      },
+      "then": [
+        {
+          "deb": "led",
+          "circuit": "1_01",
+          "state": false
+        },
+        {
+          "dev": "relay",
+          "relayType": "physical",
+          "circuit": "2_04",
+          "state": true,
+          "comments": [
+            "Main kitchen lights",
+            "This relay will switch to false automatically",
+            "as it has a 100ms timer setup.",
+            "It controls a 24V AC pulse relay"
+          ]
+        },
+        {
+          "dev": "relay",
+          "relayType": "digital",
+          "circuit": "2_01",
+          "state": false,
+          "comments": [
+            "Sink lights",
+            "This digital output controls a normal 24V DC relay"
+          ]
+        }
+      ],
+      "comments": [
+        "mute: true prevents the system from raising the",
+        "normal long press event"
+      ],
+      "mute": true
+    }
+  ],
+  "inputs": {
+    "...": "..."
+  }
+}
+```
+
+## Detection of stuck push buttons
+
+As of version 1.1.1, it is possible to stop raising repeated 'long-press' events as of a specific repeat count (defaults to 10). This is mainly to prevent devices from breaking (pulse relays or lights or …) due to many repeated switches.
+
+### Configuration
+
+Global configuration (for all inputs) is possible (10 by default), as well as per-input configuration.
+
+> **Note** that the entire "inputs" section is optional, and per 'unipi endpoint'.
+
+```json
+{
+    "inputs": {
+        "comments": [
+            "10 is the default when not configured",
+            "set to null to disable"
+        ],
+        "maxRepeatCount": 10,
+        "2_04": {
+            "comments": [
+                "This input has an overridden maximum of 20",
+                "as I use it for dimming"
+            ],
+            "maxRepeatCount": 20
+        }
+    }
+}
+```
+
+
 
 # Supported UniPI Services
 
