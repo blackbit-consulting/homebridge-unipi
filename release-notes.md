@@ -1,3 +1,9 @@
+---
+author: Daan Kets <daankets@blackbit.be>
+version: 1.1.1
+title: HomeBridge UniPi Plugin for Evok API
+---
+
 # Release notes
 
 ## 1.1.1
