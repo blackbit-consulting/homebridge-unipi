@@ -1,6 +1,6 @@
 {
 	"name": "homebridge-unipi",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"description": "HomeBridge Plugin for the UniPi Neuron Devices",
 	"keywords": [
 		"homebridge-plugin",
