@@ -73,7 +73,14 @@ module.exports.UniPiPlatform = class UniPiPlatform {
 					doublePressMaxDelay: endpoint.doublePressMaxDelay,
 					longPressMinDelay: endpoint.longPressMinDelay,
 					timers: endpoint.timers || [],
-					input: endpoint.inputs || []
+					input: endpoint.inputs || {maxRepeatCount: 10},
+					// Converts all 'then' rules to arrays
+					rules: (endpoint.rules || []).map((rule) => {
+						if (!Array.isArray(rule.then)) {
+							rule.then = [rule.then];
+						}
+						return rule;
+					})
 				} || null;
 			})
 		};
