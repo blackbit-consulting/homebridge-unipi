@@ -356,7 +356,8 @@ sudo npm -g install npm && sudo npm -g install homebridge-unipi
 sudo systemctl restart homebridge
 ```
 
-
-
 # License & Copyright
 The software is released under the [LGPLv3](https://choosealicense.com/licenses/lgpl-3.0/), and copyrighted &copy;2018 by **Daan Kets**.
+
+# Privacy & Disclaimer
+[Read here](./disclaimer.md)
