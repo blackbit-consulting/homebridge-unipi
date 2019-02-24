@@ -11,7 +11,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	/**
 	 * Construct a new UniPi accessory
-	 * @param homebridge {object} A reference to the running HomeBridge instance.
+	 * @param config {object} An object with configuration data
 	 * @param platform {UniPiPlatform} The UniPi platform instance
 	 * @param accessory {Accessory} The UniPi HomeBridge accessory object
 	 */
@@ -154,13 +154,13 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 							switch (timer.relayType) {
 								case "digital":
 									timer.ignoreNextToggle = true;
-									this.setDigitalOutputState(timer.circuit, true, (error, result) => {
+									this.setDigitalOutputState(timer.circuit, true, (error) => {
 										this.safeCallback(done, error, state);
 									});
 									break;
 								case "physical":
 									timer.ignoreNextToggle = true;
-									this.setRelayOutputState(timer.circuit, true, (error, result) => {
+									this.setRelayOutputState(timer.circuit, true, (error) => {
 										this.safeCallback(done, error, state);
 									});
 									break;
@@ -209,7 +209,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					this.log("Changed impulse relay state of", outputType, s, i, "to", !state);
 				});
 		}
-	};
+	}
 
 	$setupDigitalOutputs() {
 		try {
@@ -234,7 +234,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				this.$digitalOutputs.set(`digital-relay-${s}.${i}`, digOut);
 			});
 		} catch (error) {
-			console.error(error, error.stack);
+			this.log(error, error.stack);
 		}
 	}
 
@@ -261,7 +261,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				this.$relayOutputs.set(`physical-relay-${s}.${i}`, relay);
 			});
 		} catch (error) {
-			console.error(error, error.stack);
+			this.log(error, error.stack);
 		}
 	}
 
@@ -322,7 +322,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				});
 			});
 		} catch (error) {
-			console.error(error, error.stack);
+			this.log(error, error.stack);
 		}
 	}
 
@@ -552,7 +552,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				this.stop();
 				this.reconnect();
 			})
-			.on("message", (device, previous = {}) => {
+			.on("message", (device = {}) => {
 				device.forEach((message) => this.processUniPiEvent(message));
 			});
 		this.reconnect();
@@ -615,10 +615,6 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	get accessory() {
 		return this.$accessory;
-	}
-
-	get uuid() {
-		return this.$accessory.uuid;
 	}
 
 	get device() {
@@ -741,17 +737,25 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	}
 
+	/**
+	 * Returns the uuid of this accessory. Used by registration procedure.
+	 * TODO - ESHint incorrectly assumes unused.
+	 * @return {string} UUID.
+	 */
 	get uuid() {
 		return this.$accessory.uuid;
 	}
 
+	/**
+	 * Unregister this accessory from the platform.
+	 */
 	unregister() {
 		this.$platform.unregisterUniPiAccessory(this.accessory);
 	}
 
 	/**
-	 * Log a message from this accessory
-	 * @param message
+	 * Log a message from this accessory (with prefix)
+	 * @param args 0 or more arguments to log
 	 */
 	log(...args) {
 		this.$platform.log(this.$config.name || "UniPi", ...args);
@@ -822,7 +826,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				cb(error, ...results)
 			}
 		} catch (error) {
-			console.error("Error executing callback", error, error.stack);
+			this.log("Error executing callback", error, error.stack);
 		}
 	}
 };

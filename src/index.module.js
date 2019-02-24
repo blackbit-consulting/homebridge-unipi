@@ -1,9 +1,8 @@
 "use strict";
 
 /**
- * Main script, used for loading the library
+ * Main script, used for loading the library.
  */
-
 const UniPiPlatform = require("./model/unipi-platform.model").UniPiPlatform;
 
 

@@ -1,0 +1,15 @@
+{
+	"extends": "eslint:recommended",
+	"rules": {
+		"for-direction": "off",
+		"getter-return": "off"
+	},
+	"env": {
+		"node": true,
+		"es6": true
+	},
+	"parserOptions": {
+		"ecmaVersion": 2018,
+		"sourceType": "module"
+	}
+}
