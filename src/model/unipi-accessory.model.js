@@ -435,6 +435,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					} else if (state.longPressRelease) {
 						// DISABLED this.log("IGNORE LONG PRESS RELEASE", digInId);
 						state.longPressRelease = false;
+						state.repeatCount = 0;
 					} else {
 						// DISABLED this.log("SINGLE PRESS", digInId, "in", (this.$config.doublePressMaxDelay || 500), "ms");
 						state.cancelTimer = setTimeout(() => {
