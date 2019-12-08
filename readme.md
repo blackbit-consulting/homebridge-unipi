@@ -1,6 +1,6 @@
 ---
 author: Daan Kets <daankets@blackbit.be>
-version: 1.1.1
+version: 1.1.3
 title: HomeBridge UniPi Plugin for Evok API
 ---
 
@@ -13,11 +13,39 @@ The purpose of *this* plugin library is to expose <u>all</u> (or as much as poss
 ![UniPi Neuron Device](./static/unipi-neuron.png)
 _**Copyright & Source**: [UniPi.technology](https://unipi.technology) - With permission from the copyright owner_
 
-# State of development
+# Plugin Requirements
 
-This is a work in progress, but a lot already works ;-). Enough for a first 1.0.0 release:
+The plugin is stable enough for production use. It requires:
+ - On the homebridge device:
+   - the latest version (4.50) of Homebridge,
+   - Node 12.x,
+   - the latest version (5.40) of `unipi-firmware` (installed and applied)
+ - On the UniPi Neuron device
+   - Version 2.1.8 of the `evok` pacakge installed, and exposed to the homebridge device (see config).
+   - Version 1.36.1.20190819 of the `neuron-kernel` package
+   - Version  1.20190819 of the `raspberrypi-kernel` package
+
+> **Note**
+>
+> Since iOS 13, the different sub accessories will appear grouped as one single UniPi accessory. I'm working
+> on a next release, that will expose the devices in a different way.
+
+## History
+### 1.1.3
+The watchdog now works in a different way, and will toggle the first user led every 3 seconds in order to test
+the connection. The watchdog will reset the websocket connection to the Evok api after 5 missed events.
+### 1.1.2
+Resoves a dependency issue, and fixed an issue with stuck inputs (disables repeat after a set max repeat count).
+### 1.1.1
+Fixes a minor bug with the first release.
+### 1.0.0
+First public release
+
+## Screenshot
 
 ![Screenshot](./static/screenshot.png)
+
+# Supported features
 
 ## State preservation
 
@@ -235,13 +263,13 @@ Installation is very straightforward, and it is possible to configure more than 
    ```bash
    # Switch users
    sudo -i -u homebridge
-   
+
    # Make the .homebridge folder
    mkdir .homebridge
-   
+
    # Create and edit the configuration file (see below)
    vi .homebridge/config.json
-   
+
    # Return to your own user
    exit
    ```
