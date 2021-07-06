@@ -1,7 +1,8 @@
----
-author: Daan Kets <daankets@blackbit.be>
-version: 1.1.1
-title: HomeBridge UniPi Plugin for Evok API
+[![.github/workflows/build.yml](https://github.com/blackbit-consulting/homebridge-unipi/actions/workflows/build.yml/badge.svg)](https://github.com/blackbit-consulting/homebridge-unipi/actions/workflows/build.yml)
+
+* **author**: Daan Kets <daankets@blackbit.be>
+* **version**: 1.2.1
+* **title**: HomeBridge UniPi Plugin for Evok API
 ---
 
 # About this plugin
@@ -235,13 +236,13 @@ Installation is very straightforward, and it is possible to configure more than 
    ```bash
    # Switch users
    sudo -i -u homebridge
-   
+
    # Make the .homebridge folder
    mkdir .homebridge
-   
+
    # Create and edit the configuration file (see below)
    vi .homebridge/config.json
-   
+
    # Return to your own user
    exit
    ```
