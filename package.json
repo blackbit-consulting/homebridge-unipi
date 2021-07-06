@@ -1,6 +1,6 @@
 {
 	"name": "homebridge-unipi",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"description": "HomeBridge Plugin for the UniPi Neuron Devices",
 	"keywords": [
 		"homebridge-plugin",
@@ -30,8 +30,7 @@
 		"unipi-evok": "^0.1.1"
 	},
 	"devDependencies": {
-		"eslint": "^5.14.1",
-		"jscs": "^3.0.7"
+		"eslint": "^5.14.1"
 	},
 	"engines": {
 		"node": ">=11.0.0",
