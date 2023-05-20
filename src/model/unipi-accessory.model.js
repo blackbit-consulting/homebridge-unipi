@@ -1,8 +1,13 @@
 "use strict";
 
-const Evok = require("unipi-evok");
+const Evok = require("../evok/client");
 const RELAY_TYPE = "relay_type";
+const packageVersion = require("../../package.json").version;
 
+const WATCHDOG_LED_CIRCUIT = "1_01";
+const WATCHDOG_INTERVAL = 3000;
+const MAX_WATCHDOG_COUNT = 5;
+const AUTO_RECONNECT_INTERVAL = 10000;
 /**
  * This class represents a single UniPi Accessory. It acts as a gateway for retrieving information from the device,
  * and for sending commands to the device. This class represents the Accessory in HomeBridge.
@@ -17,6 +22,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	 */
 	constructor(platform, config, accessory) {
 		this.$platform = platform;
+		this.$watchDogLedState = 0;
 		this.$maintenanceModeActive = false;
 		if (accessory) {
 			this.$accessory = accessory;
@@ -576,18 +582,20 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	}
 
 	startWatchDog() {
-		this.log("Starting watchdog");
+		this.log("Starting watchdog %s", packageVersion);
 		this.$watchDogInterval = setInterval(() => {
 			this.$watchDogCounter++;
-			if (this.$watchDogCounter > 5) {
-				this.log("Communication watchdog triggered: Resetting connection!")
+			this.$watchDogLedState++;
+			this.setUserLedState(WATCHDOG_LED_CIRCUIT, this.$watchDogLedState % 2 && true || false);
+			if (this.$watchDogCounter > MAX_WATCHDOG_COUNT) {
+				this.log("Communication watchdog triggered: Resetting connection!");
 				this.stop(true);
 			}
-		}, 1000);
+		}, WATCHDOG_INTERVAL);
 	}
 
 	resetWatchDog() {
-		this.$watchDogCounter = 0;
+		this.$watchDogCounter = 0; // Reset to 0 or 1 (keep LED interval state)
 	}
 
 	reconnect() {
@@ -597,7 +605,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			this.log("Problem connecting to UniPi device. Reconnecting in 10s...", error, error.stack);
 			setTimeout(() => {
 				this.reconnect();
-			}, 10000);
+			}, AUTO_RECONNECT_INTERVAL);
 		}
 	}
 
