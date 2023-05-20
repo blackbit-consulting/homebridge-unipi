@@ -42,8 +42,6 @@ class evok extends client {
 	input(circuit) {
 		return this
 			.device("input", circuit);
-		;
-
 	}
 
 	relays() {
