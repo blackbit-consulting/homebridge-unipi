@@ -48,11 +48,6 @@ class client extends EventEmitter {
 		});
 	}
 
-	// POST via REST API
-	post() {
-		//TODO
-	}
-
 	// send via WebSocket
 	send(message) {
 		if (typeof message !== "object") {

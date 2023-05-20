@@ -57,7 +57,7 @@ module.exports.UniPiPlatform = class UniPiPlatform {
 	 */
 	constructor(log, config, homebridge) {
 		log("UniPi plugin for HomeBridge");
-		log("Copyright © 2019 by Daan Kets, released under LGPLv3 License", homebridge.version);
+		log("Copyright © 2023 by Daan Kets, released under LGPLv3 License", homebridge.version);
 		this.$log = log;
 		this.$homebridge = homebridge;
 		this.$config = {
@@ -147,7 +147,7 @@ module.exports.UniPiPlatform = class UniPiPlatform {
 		this.log("Removing Accessory...", uuid);
 		let accessory = this.$accessories.get(uuid);
 		if (accessory) {
-			UniPiAccessory.stop();
+			UniPiAccessory.stop(false);
 			accessory.unregister();
 			this.$accessories.delete(uuid);
 		}

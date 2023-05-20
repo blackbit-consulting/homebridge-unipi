@@ -28,23 +28,35 @@ class evok extends client {
 	}
 
 	device(dev, circuit) {
-		return this.devices().filter(device => device.dev === dev && device.circuit === circuit)
+		return this
+			.devices()
+			.filter(device => device.dev === dev && device.circuit === circuit);
 	}
 
 	inputs() {
-		return this.devices().filter(device => device.dev === "input")
+		return this
+			.devices()
+			.filter(device => device.dev === "input");
 	}
 
 	input(circuit) {
-		//TODO: input state?
+		return this
+			.device("input", circuit);
+		;
+
 	}
 
 	relays() {
-		return this.devices().filter(device => device.dev === "relay" && device.relay_type === "physical").sort(this.sort);
+		return this
+			.devices()
+			.filter(device => device.dev === "relay" && device.relay_type === "physical")
+			.sort(this.sort);
 	}
 
 	relay(circuit, state) {
-		let relay = this.relays().find(device => device.circuit === circuit);
+		let relay = this
+			.relays()
+			.find(device => device.circuit === circuit);
 
 		if (!relay) {
 			throw `Invalid relay: ${circuit}`;
@@ -65,7 +77,8 @@ class evok extends client {
 	}
 
 	digitalOutput(circuit, state) {
-		let output = this.digitalOutputs()
+		let output = this
+			.digitalOutputs()
 			.find(device => device.circuit === circuit);
 
 		if (!output) {
@@ -137,7 +150,8 @@ class evok extends client {
 	}
 
 	owDevices() {
-		//TODO:
+		return this
+			.device("1wire", "all");
 	}
 
 	set(dev, circuit, state) {

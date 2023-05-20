@@ -8,6 +8,7 @@ const WATCHDOG_LED_CIRCUIT = "1_01";
 const WATCHDOG_INTERVAL = 3000;
 const MAX_WATCHDOG_COUNT = 5;
 const AUTO_RECONNECT_INTERVAL = 10000;
+let stopping = false;
 /**
  * This class represents a single UniPi Accessory. It acts as a gateway for retrieving information from the device,
  * and for sending commands to the device. This class represents the Accessory in HomeBridge.
@@ -549,18 +550,24 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					this.$setupMaintenanceMode();
 				}
 				// Set initial states
-				this.$device.devices().forEach((device) => {
-					this.processUniPiEvent(device);
-				});
+				this.$device
+					.devices()
+					.forEach((device) => {
+						this.processUniPiEvent(device);
+					});
 				this.startWatchDog();
 			})
 			.on("error", (error) => {
 				this.log("Connection error", error, error.stack);
-				this.stop();
-				this.reconnect();
+				this.stop(!stopping);
+				// this.reconnect();
 			})
 			.on("message", (device = {}) => {
 				device.forEach((message) => this.processUniPiEvent(message));
+			})
+			.on("disconnected", () => {
+				this.log("Disconnected");
+				this.stop(!stopping);
 			});
 		this.reconnect();
 	}
@@ -610,6 +617,11 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	}
 
 	stop(restart) {
+		if (!restart) {
+			// Stopping
+			this.log("Stopping UniPi Accessory...");
+			stopping = true;
+		}
 		try {
 			clearInterval(this.$watchDogInterval);
 			this.$device.close();
