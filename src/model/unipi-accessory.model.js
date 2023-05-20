@@ -1,6 +1,6 @@
 "use strict";
 
-const Evok = require("../evok/client");
+const Evok = require("../evok");
 const RELAY_TYPE = "relay_type";
 const packageVersion = require("../../package.json").version;
 

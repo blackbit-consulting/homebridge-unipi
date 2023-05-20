@@ -36,12 +36,19 @@ class client extends EventEmitter {
 	// GET via REST API
 	get(url) {
 		return new Promise((resolve, reject) => {
-			const request = http.get(`${this.restUrl()}${url}`, (res) => {
-				if (res.statusCode === 200) {
-					resolve(JSON.parse(res.body));
-				}
-				reject(new Error("Unexpected (non-200) response"));
-			});
+			let buffer = Buffer.alloc(2048);
+			const request = http
+				.get(`${this.restUrl()}${url}`, (res) => {
+					res.on("error", (err) => {
+						reject(err);
+					});
+					res.on("data", (chunk) => {
+						buffer = Buffer.concat([buffer,chunk]);
+					});
+					res.on("end", () => {
+						resolve(JSON.parse(buffer.toString("utf8")));
+					});
+				});
 			request.on("error", (err) => {
 				reject(err);
 			});
