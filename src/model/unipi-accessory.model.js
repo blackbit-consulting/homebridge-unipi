@@ -389,7 +389,8 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	processDigitalInputEvent(event) {
 		// DISABLED this.log("Processing digital input event %j", event);
-		let {s, i} = {s:
+		let {s, i} = {
+			s:
 				parseInt(event.circuit.substring(0, 1)),
 			i: parseInt(event.circuit.substring(2))
 		};
@@ -536,7 +537,8 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 		this.$device = new Evok({
 			host: this.$config.host,
 			restPort: this.$config.port,
-			wsPort: this.$config.wsPort
+			wsPort: this.$config.wsPort,
+			log: (message) => this.log(message)
 		});
 
 		this.resetWatchDog();
@@ -749,8 +751,9 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			this.assertConnected();
 			let leds = this.$device.leds();
 			leds.forEach((ledEvent) => {
-				let {s, i} = {s: parseInt(
-					ledEvent.circuit.substring(0, 1)),
+				let {s, i} = {
+					s: parseInt(
+						ledEvent.circuit.substring(0, 1)),
 					i: parseInt(ledEvent.circuit.substring(2))
 				};
 				let led = this.$accessory

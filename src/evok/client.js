@@ -9,6 +9,7 @@ class client extends EventEmitter {
 		super();
 
 		this.options = options;
+		this.log = options.log || function(message) {return message};
 
 		this.client = new WebSocketClient();
 		this.client.on("connect", this.connected.bind(this));
@@ -36,18 +37,32 @@ class client extends EventEmitter {
 	// GET via REST API
 	get(url) {
 		return new Promise((resolve, reject) => {
-			let buffer = Buffer.alloc(2048);
+			let buffer = "";
+			this.log(`GET ${this.restUrl()}${url}`);
 			const request = http
 				.get(`${this.restUrl()}${url}`, (res) => {
-					res.on("error", (err) => {
-						reject(err);
-					});
-					res.on("data", (chunk) => {
-						buffer = Buffer.concat([buffer,chunk]);
-					});
-					res.on("end", () => {
-						resolve(JSON.parse(buffer.toString("utf8")));
-					});
+					if (res.statusCode !== 200) {
+						this.log(`HTTP ${res.statusCode}`);
+						reject(res.statusCode);
+					} else {
+						res.on("error", (err) => {
+							reject(err);
+						});
+						res.on("data", (chunk) => {
+							buffer += chunk;
+						});
+						res.on("end", () => {
+							this.log(`${buffer.length} bytes`);
+							try {
+								const body = JSON.parse(buffer);
+								resolve(body);
+							} catch (error) {
+								reject(error);
+								this.log(error, error.stack);
+								this.log(`[${buffer}]`);
+							}
+						});
+					}
 				});
 			request.on("error", (err) => {
 				reject(err);
