@@ -115,8 +115,8 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 	$setupPulseRelays() {
 		this.$timers.forEach((timer) => {
 			let {s, i} = {
-				s: parseInt(timer.circuit.substr(0, 1)),
-				i: parseInt(timer.circuit.substr(2))
+				s: parseInt(timer.circuit.substring(0, 1)),
+				i: parseInt(timer.circuit.substring(2))
 			};
 			let id = `virtual-${timer.relayType}-impulse-relay-${s}.${i}`;
 			let outputType = timer.relayType === "digital" ? "digital output" : "relay";
@@ -188,8 +188,8 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	togglePulseRelay(timer) {
 		let {s, i} = {
-			s: parseInt(timer.circuit.substr(0, 1)),
-			i: parseInt(timer.circuit.substr(2))
+			s: parseInt(timer.circuit.substring(0, 1)),
+			i: parseInt(timer.circuit.substring(2))
 		};
 		let id = `virtual-${timer.relayType}-impulse-relay-${s}.${i}`;
 		let outputType = timer.relayType === "digital" ? "digital output" : "relay";
@@ -225,8 +225,8 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			let digitalOutputs = this.$device.digitalOutputs();
 			digitalOutputs.forEach((digOutEvent) => {
 				let {s, i} = {
-					s: parseInt(digOutEvent.circuit.substr(0, 1)),
-					i: parseInt(digOutEvent.circuit.substr(2))
+					s: parseInt(digOutEvent.circuit.substring(0, 1)),
+					i: parseInt(digOutEvent.circuit.substring(2))
 				};
 				let digOut = this.$accessory
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.Switch, `digital-relay-${s}.${i}`);
@@ -252,8 +252,8 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			let relays = this.$device.relays();
 			relays.forEach((relayEvent) => {
 				let {s, i} = {
-					s: parseInt(relayEvent.circuit.substr(0, 1)),
-					i: parseInt(relayEvent.circuit.substr(2))
+					s: parseInt(relayEvent.circuit.substring(0, 1)),
+					i: parseInt(relayEvent.circuit.substring(2))
 				};
 				let relay = this.$accessory
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.Switch, `physical-relay-${s}.${i}`);
@@ -283,8 +283,8 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			let l = 0;
 			digitalInputs.forEach((inputEvent) => {
 				let {s, i} = {
-					s: parseInt(inputEvent.circuit.substr(0, 1)),
-					i: parseInt(inputEvent.circuit.substr(2))
+					s: parseInt(inputEvent.circuit.substring(0, 1)),
+					i: parseInt(inputEvent.circuit.substring(2))
 				};
 				l++;
 				let digIn = this.$accessory
@@ -335,7 +335,10 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	processOnOffEvent(event) {
 		// DISABLED this.log("Processing relay event %j", event);
-		let {s, i} = {s: parseInt(event.circuit.substr(0, 1)), i: parseInt(event.circuit.substr(2))};
+		let {s, i} = {
+			s: parseInt(event.circuit.substring(0, 1)),
+			i: parseInt(event.circuit.substring(2))
+		};
 		let device = null;
 		if (event.dev === "relay" && event[RELAY_TYPE] === "digital") {
 			const digOutId = `digital-relay-${s}.${i}`;
@@ -352,7 +355,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 				.getCharacteristic(UniPiAccessory.Characteristic.On)
 				.getValue((error, state) => {
 
-					if (state === event.value && true || false) {
+					if (state === event.value) {
 						return; // SKIP IF THE STATE DID NOT CHANGE! Especially try during boot.
 					}
 					device
@@ -367,7 +370,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 							clearTimeout(timer.cancelTimeout);
 							timer.cancelTimeout = null;
 						}
-						if (event.value && true) { // When turned on, enable the timer!
+						if (event.value) { // When turned on, enable the timer!
 							this.log("Timer started for circuit " + event.circuit);
 							timer.cancelTimeout = setTimeout(() => { // After timer expiry
 								timer.cancelTimout = null; // Drop the timer handle
@@ -386,7 +389,10 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	processDigitalInputEvent(event) {
 		// DISABLED this.log("Processing digital input event %j", event);
-		let {s, i} = {s: parseInt(event.circuit.substr(0, 1)), i: parseInt(event.circuit.substr(2))};
+		let {s, i} = {s:
+				parseInt(event.circuit.substring(0, 1)),
+			i: parseInt(event.circuit.substring(2))
+		};
 		const digInId = `digital-input-${s}.${i}`;
 		let digIn = this.$digitalInputs.get(digInId);
 		let state = this.$digitalInputStates.get(digInId);
@@ -555,12 +561,17 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 					.forEach((device) => {
 						this.processUniPiEvent(device);
 					});
+
 				this.startWatchDog();
 			})
 			.on("error", (error) => {
 				this.log("Connection error", error, error.stack);
-				this.stop(!stopping);
-				// this.reconnect();
+				this.log("Retrying in 5 seconds...");
+				this.stop(true);
+				setTimeout(() => {
+					this.log("Reconnecting...");
+					this.start();
+				}, 5000);
 			})
 			.on("message", (device = {}) => {
 				device.forEach((message) => this.processUniPiEvent(message));
@@ -597,6 +608,7 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			if (this.$watchDogCounter > MAX_WATCHDOG_COUNT) {
 				this.log("Communication watchdog triggered: Resetting connection!");
 				this.stop(true);
+				this.start();
 			}
 		}, WATCHDOG_INTERVAL);
 	}
@@ -616,21 +628,19 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 		}
 	}
 
-	stop(restart) {
-		if (!restart) {
-			// Stopping
-			this.log("Stopping UniPi Accessory...");
-			stopping = true;
-		}
+	stop(restart = false) {
+		stopping = !restart; // Set stopping state
+		this.log(`Stopping UniPi Accessory ${stopping ? "permanently" : "temporarily"}`);
+		this.log("Stopping watchdog...");
+		clearInterval(this.$watchDogInterval);
+		// Mark as unreachable
+		this.unreachable();
 		try {
-			clearInterval(this.$watchDogInterval);
+			this.log("Closing Evok device...");
 			this.$device.close();
+			this.log("Evok device closed...");
 		} catch (error) {
 			this.log("Error while disconnecting. Connection may already be closed.");
-		}
-		this.unreachable();
-		if (restart) {
-			this.start();
 		}
 	}
 
@@ -739,7 +749,10 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 			this.assertConnected();
 			let leds = this.$device.leds();
 			leds.forEach((ledEvent) => {
-				let {s, i} = {s: parseInt(ledEvent.circuit.substr(0, 1)), i: parseInt(ledEvent.circuit.substr(2))};
+				let {s, i} = {s: parseInt(
+					ledEvent.circuit.substring(0, 1)),
+					i: parseInt(ledEvent.circuit.substring(2))
+				};
 				let led = this.$accessory
 					.getServiceByUUIDAndSubType(UniPiAccessory.Service.Lightbulb, `user-led-${s}.${i}`);
 				if (!led) {
@@ -760,7 +773,6 @@ module.exports.UniPiAccessory = class UniPiAccessory {
 
 	/**
 	 * Returns the uuid of this accessory. Used by registration procedure.
-	 * TODO - ESHint incorrectly assumes unused.
 	 * @return {string} UUID.
 	 */
 	get uuid() {

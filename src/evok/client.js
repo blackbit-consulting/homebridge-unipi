@@ -65,7 +65,6 @@ class client extends EventEmitter {
 		return this;
 	}
 
-	// internal methods
 	connected(connection) {
 		this.register(connection);
 		this.emit("connected");
